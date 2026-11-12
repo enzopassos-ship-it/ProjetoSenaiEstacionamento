@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="claro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Estacionamento inteligente</title>
+  <meta name="theme-color" content="#2457D6">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">
+      <span class="logo" aria-hidden="true">E</span>
+      <div>
+        <h1>Estacionamento inteligente</h1>
+        <p>Maquete SENAI com 3 vagas e sensores magnéticos</p>
+      </div>
+    </div>
+
+    <div class="topo-direita">
+      <div class="indicadores" role="status" aria-live="polite">
+        <div class="indicador" id="indEsp" data-estado="buscando">
+          <span class="indicador-ponto" aria-hidden="true"></span>
+          <div>
+            <p class="indicador-titulo" id="indEspTitulo">Buscando conexão com o ESP32</p>
+            <p class="indicador-detalhe" id="indEspDetalhe">Aguarde alguns segundos</p>
+          </div>
+        </div>
+        <div class="indicador" id="indFirebase" data-estado="buscando">
+          <span class="indicador-ponto" aria-hidden="true"></span>
+          <div>
+            <p class="indicador-titulo" id="indFirebaseTitulo">Buscando conexão com o Firebase</p>
+            <p class="indicador-detalhe" id="indFirebaseDetalhe">Aguarde alguns segundos</p>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="botao-icone" id="btnTema" aria-pressed="false" aria-label="Usar tema escuro">
+        <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="icone-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="aviso-demo" id="avisoDemo" hidden>
+    <p>Modo demonstração: os carros entram e saem sozinhos, simulados no navegador.
+      Nada é enviado ao ESP32 nem ao Firebase.</p>
+    <button type="button" class="botao botao-secundario" id="btnSairDemo">Sair da demonstração</button>
+  </div>
+
+  <main class="grade">
+    <section class="area-maquete" aria-labelledby="tituloMaquete">
+      <h2 class="visualmente-oculto" id="tituloMaquete">Vista da maquete</h2>
+
+      <div class="palco" id="palco" tabindex="0"
+           aria-label="Maquete 3D do estacionamento. Arraste ou use as setas do teclado para girar.">
+        <div class="cena" id="cena">
+          <div class="garagem suave" id="garagem"></div>
+        </div>
+
+        <div class="letreiro" id="letreiro" data-estado="carregando" aria-live="polite">
+          <span class="letreiro-numero" id="letreiroNumero">–</span>
+          <span class="letreiro-texto" id="letreiroTexto">vagas livres</span>
+        </div>
+
+        <div class="vistas" role="group" aria-label="Ângulo da maquete">
+          <button type="button" data-vista="panoramica" aria-pressed="true">Panorâmica</button>
+          <button type="button" data-vista="cima" aria-pressed="false">De cima</button>
+          <button type="button" data-vista="frente" aria-pressed="false">De frente</button>
+        </div>
+        <p class="dica-arraste" aria-hidden="true">Arraste para girar</p>
+      </div>
+
+      <div class="resumo">
+        <article class="stat stat-ocupadas">
+          <span class="stat-icone" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 16V11.5L7 6.5A1.5 1.5 0 0 1 8.4 5.5h7.2A1.5 1.5 0 0 1 17 6.5l2 5V16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M5 11.5h14M7 17v2M17 17v2"/><circle cx="8.5" cy="14" r=".6"/><circle cx="15.5" cy="14" r=".6"/></svg>
+          </span>
+          <h3>Ocupadas</h3>
+          <p class="stat-valor" id="resumoOcupadas">–</p>
+        </article>
+        <article class="stat stat-reservadas">
+          <span class="stat-icone" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-4-6 4V4.5a1 1 0 0 1 1-1z"/></svg>
+          </span>
+          <h3>Reservadas</h3>
+          <p class="stat-valor" id="resumoReservadas">–</p>
+        </article>
+        <article class="stat stat-entradas">
+          <span class="stat-icone" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l4-4-4-4M14 12H4"/></svg>
+          </span>
+          <h3>Carros que entraram</h3>
+          <p class="stat-valor" id="resumoEntradas">–</p>
+        </article>
+        <article class="stat stat-ocupacao">
+          <span class="stat-icone" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>
+          </span>
+          <h3>Ocupação média</h3>
+          <p class="stat-valor" id="resumoOcupacao">–</p>
+          <div class="stat-barra" aria-hidden="true"><span id="resumoBarra"></span></div>
+        </article>
+      </div>
+    </section>
+
+    <aside class="lateral">
+      <section class="painel" aria-labelledby="tituloVagas">
+        <div class="painel-cabecalho">
+          <h2 id="tituloVagas">Vagas</h2>
+          <span class="painel-contador" id="resumoLivres">– livres</span>
+        </div>
+        <ul class="lista-vagas" id="listaVagas"></ul>
+      </section>
+
+      <section class="painel" aria-labelledby="tituloHistorico">
+        <div class="painel-cabecalho">
+          <h2 id="tituloHistorico">Histórico</h2>
+        </div>
+        <ol class="historico" id="historico">
+          <li class="historico-vazio">Aguardando dados do ESP32.</li>
+        </ol>
+      </section>
+    </aside>
+
+    <section class="painel area-sistema" aria-labelledby="tituloSistema">
+      <div class="painel-cabecalho">
+        <h2 id="tituloSistema">Sistema</h2>
+      </div>
+      <dl class="dados-sistema">
+        <div><dt>Rede Wi-Fi</dt><dd id="sisRede">–</dd></div>
+        <div><dt>Endereço do painel</dt><dd id="sisEndereco">–</dd></div>
+        <div><dt>Sinal</dt><dd id="sisSinal">–</dd></div>
+        <div><dt>Ligado há</dt><dd id="sisLigado">–</dd></div>
+        <div><dt>Envio ao Firebase</dt><dd id="sisFirebase">–</dd></div>
+        <div><dt>Firmware</dt><dd id="sisFirmware">–</dd></div>
+      </dl>
+      <p class="nota-controle" id="notaControle" hidden>
+        Os dados estão vindo do Firebase. Para reservar vagas e testar os LEDs,
+        abra o painel pelo endereço do ESP32, na mesma rede Wi-Fi.
+      </p>
+      <div class="acoes">
+        <button type="button" class="botao" id="btnTestar">Testar LEDs</button>
+        <button type="button" class="botao botao-secundario" id="btnZerar">Zerar contadores</button>
+        <button type="button" class="botao botao-texto" id="btnDemo">Ver demonstração</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
